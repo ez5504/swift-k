@@ -2,7 +2,7 @@
  * Swift Parallel Scripting Language (http://swift-lang.org)
  *
  * Copyright 2012-2014 University of Chicago
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -34,6 +34,7 @@ void add(string& ss, const char* key, const string* value);
 void add(string& ss, const char* key, const string& value);
 void add(string& ss, const char* key, const char* value);
 void add(string& ss, const char* key, const char* value, int n);
+string toString(CoasterStagingMode);
 
 string JobSubmitCommand::NAME("SUBMITJOB");
 
@@ -72,6 +73,23 @@ void JobSubmitCommand::serialize() {
 	add(ss, "stdout", job->getStdoutLocation());
 	add(ss, "stderr", job->getStderrLocation());
 
+	std::vector<StagingSetEntry>* stageins = job->getStageIns();
+	if (stageins != NULL) {
+		for (std::vector<StagingSetEntry>::iterator i = stageins->begin(); i != stageins->end(); ++i) {
+			LogDebug << "stagein -- " << i->getSource() << endl << i->getDestination() << endl << toString(i->getMode()) << endl;
+			add(ss, "stagein",
+					string(i->getSource()).append("\n").append(i->getDestination()).append("\n").append(toString(i->getMode())));
+		}
+	}
+
+	std::vector<StagingSetEntry>* stageouts = job->getStageOuts();
+	if (stageouts != NULL) {
+		for (std::vector<StagingSetEntry>::iterator i = stageouts->begin(); i != stageouts->end(); ++i) {
+			LogDebug << "stageout -- " << i->getSource() << endl << i->getDestination() << endl << toString(i->getMode()) << endl;
+			add(ss, "stageout",
+					string(i->getSource()).append("\n").append(i->getDestination()).append("\n").append(toString(i->getMode())));
+		}
+	}
 
 	const vector<string*>& arguments = job->getArguments();
 	for (vector<string*>::const_iterator i = arguments.begin(); i != arguments.end(); ++i) {
@@ -142,4 +160,15 @@ void add(string& ss, const char* key, const char* value, int n) {
 		}
 	}
 	ss.append(1, '\n');
+}
+
+string toString(CoasterStagingMode m) {
+	string mode;
+	if(m == COASTER_STAGE_ALWAYS) mode = "1"; // "COASTER_STAGE_ALWAYS";
+	else if(m == COASTER_STAGE_IF_PRESENT) mode = "2"; // "COASTER_STAGE_IF_PRESENT";
+	else if(m == COASTER_STAGE_ON_ERROR) mode = "4"; // "COASTER_STAGE_ON_ERROR";
+	else if(m == COASTER_STAGE_ON_SUCCESS) mode = "8"; // "COASTER_STAGE_ON_SUCCESS";
+	else mode = "16"; //"COASTER_STAGE_NEVER";
+
+	return mode;
 }
