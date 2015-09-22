@@ -77,15 +77,23 @@ void JobSubmitCommand::serialize() {
 	if (stageins != NULL) {
 		for (std::vector<StagingSetEntry>::iterator i = stageins->begin(); i != stageins->end(); ++i) {
 			LogDebug << "stagein -- " << i->getSource() << endl << i->getDestination() << endl << toString(i->getMode()) << endl;
+			LogInfo << "stagein -- " << i->getSource() << endl << i->getDestination() << endl << toString(i->getMode()) << endl;
+			std::cout << "stagein -- " << i->getSource() << endl << i->getDestination() << endl << toString(i->getMode()) << endl;
 			add(ss, "stagein",
 					string(i->getSource()).append("\n").append(i->getDestination()).append("\n").append(toString(i->getMode())));
 		}
 	}
-
+	else
+{	LogDebug << "FAILURE TO READ IN FILES" << endl;
+	std::cout << "FAILURE TO READ IN FILES" << endl;
+	LogInfo << "FAILURE TO READ IN FILES" << endl;
+}
 	std::vector<StagingSetEntry>* stageouts = job->getStageOuts();
 	if (stageouts != NULL) {
 		for (std::vector<StagingSetEntry>::iterator i = stageouts->begin(); i != stageouts->end(); ++i) {
 			LogDebug << "stageout -- " << i->getSource() << endl << i->getDestination() << endl << toString(i->getMode()) << endl;
+			LogInfo << "stageout -- " << i->getSource() << endl << i->getDestination() << endl << toString(i->getMode()) << endl;
+			std::cout << "stageout -- " << i->getSource() << endl << i->getDestination() << endl << toString(i->getMode()) << endl;
 			add(ss, "stageout",
 					string(i->getSource()).append("\n").append(i->getDestination()).append("\n").append(toString(i->getMode())));
 		}

@@ -2,7 +2,7 @@
  * Swift Parallel Scripting Language (http://swift-lang.org)
  *
  * Copyright 2012-2014 University of Chicago
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,6 +29,8 @@
 #include "Job.h"
 #include "Settings.h"
 #include "Logger.h"
+#include "StagingSetEntry.h"
+#include "coaster-defs.h"
 
 using namespace Coaster;
 
@@ -280,6 +282,8 @@ int runJob() {
         if (jobManager != NULL) {
 		j.setJobManager(jobManager);
         }
+  //j.addStageIn("http://idkoru.com/hello.txt", "file://localhost/home/jake/hello.txt", COASTER_STAGE_ON_SUCCESS);
+  //j.addStageOut("file://localhost/home/jake/test/testing.txt", "file://localhost/home/jake/testing-new.txt", COASTER_STAGE_ON_SUCCESS);
 
 	client.submit(j, configId);
 

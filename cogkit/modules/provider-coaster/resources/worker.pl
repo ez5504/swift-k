@@ -152,7 +152,7 @@ my $SOFT_IMAGE_LEAD_PROCESS = 0;
 my $SOFT_IMAGE_FIRST_IN_PROCESS = 1;
 # keep track of the job that stages in the soft image
 # any errors that occur with this job should cause the worker
-# to signal all other workers on this node to fail and then quit 
+# to signal all other workers on this node to fail and then quit
 my $SOFT_IMAGE_JOB_ID;
 
 my $INTERNAL_ID_COUNTER = 0;
@@ -533,7 +533,7 @@ sub trim {
 
 sub sockSend {
 	my ($buf) = @_;
-	
+
 	my $start = time();
 	my $r = $SOCK->send($buf, 0);
 	if (!defined $r) {
@@ -547,9 +547,9 @@ sub sockSend {
 		}
 	}
 	my $diff = sprintf("%.8f", time() - $start);
-	
+
 	my $left = length($buf) - $r;
-	
+
 	if ($DEBUG_ENABLED) {
 		wlog(DEBUG, "sent: $r, left: $left, time: $diff\n");
 	}
@@ -570,17 +570,17 @@ sub sendm {
 		wlog(DEBUG, "OUT: len=$len, tag=$tag, flags=$flags\n");
 		wlog(TRACE, "$msg\n");
 	}
-	
+
 	my $msgBytesLeft = sockSend($buf);
 	if ($msgBytesLeft != 0) {
 		%partialSend = ("buf" => substr($buf, length($buf) - $msgBytesLeft), "data" => $data);
 	}
-	return $msgBytesLeft; 
+	return $msgBytesLeft;
 }
 
 sub encodeInt {
 	my ($value) = @_;
-	
+
 	return pack("V", $value);
 }
 
@@ -598,12 +598,12 @@ sub sendFrags {
 			$msgBytesLeft = sendm($tag, $flg | $flg2, $msg, $data);
 			if ($msgBytesLeft != 0) {
 				$partialSend{"tag"} = $tag;
-				$partialSend{"flg2"} = $flg2;				
+				$partialSend{"flg2"} = $flg2;
 				$yield = 1;
 			}
 		}
 	} while (($flg2 & FINAL_FLAG) == 0 && !$yield);
-	
+
 	if ($msgBytesLeft == 0) {
 		sendmDone($tag, $flg2, $data);
 		# would not block
@@ -617,7 +617,7 @@ sub sendFrags {
 
 sub sendmDone {
 	my ($tag, $flg2, $data) = @_;
-	
+
 	if (($flg2 & FINAL_FLAG) == 0) {
 		# final flag not set; put it back in the queue
 		if ($DEBUG_ENABLED) {
@@ -770,7 +770,7 @@ sub fileData {
 
 sub sendInternal {
 	my ($tag, $cont, $flags, $state) = @_;
-	
+
 	if (!defined $tag) {
 		$tag = $$state{"tag"};
 		if (!defined $tag) {
@@ -792,7 +792,7 @@ sub resumeSend {
 		my $msgBytesLeft = sockSend($buf);
 		if ($msgBytesLeft != 0) {
 			$partialSend{"buf"} = substr($buf, length($buf) - $msgBytesLeft);
-			return 1; 
+			return 1;
 		}
 		else {
 			sendmDone($partialSend{"tag"}, $partialSend{"flg2"}, $partialSend{"data"});
@@ -1027,12 +1027,12 @@ sub checkHeartbeat {
 sub loopOne {
 	my ($r) = @_;
 	my ($rset, $wset, $eset);
-	
+
 	checkHeartbeat();
 	checkSubprocesses();
 	checkCommands();
 	checkStartProbes();
-	
+
 	if (@SENDQ) {
 		# if there are commands to send, don't just wait for data
 		# to read from the socket
@@ -1053,7 +1053,7 @@ sub loopOne {
 		}
 		recvOne();
 	}
-	
+
 	if ($wset && @$wset) {
 		# can write
 		if ($DEBUG_ENABLED) {
@@ -1067,7 +1067,7 @@ sub sendQueued {
 	my $wouldBlock;
 	# if last write didn't finish, try to finish it now
 	$wouldBlock = resumeSend();
-	
+
 	if (!$wouldBlock) {
 		my $cmd;
 		# send whatever is now queued; don't clear the queue, since
@@ -1171,30 +1171,30 @@ sub heartbeatCBDataIn {
 
 sub queueJobStatusCmd {
 	my ($jobid, $statusCode, $errorCode, $msg, $detail) = @_;
-	
+
 	if ($statusCode == FAILED) {
 		checkSoftimageJobFailure($jobid, $msg);
 	}
 	if (!defined $detail) {
 		$detail = "";
 	}
-	queueCmd((nullCB(), "JOBSTATUS", $jobid, 
+	queueCmd((nullCB(), "JOBSTATUS", $jobid,
 			encodeInt($statusCode), encodeInt($errorCode), $msg, NULL_TIMESTAMP, $detail));
 }
 
 sub queueJobStatusCmdExt {
 	my ($jobid, $statusCode, $errorCode, $msg, $out, $err) = @_;
-	
+
 	if ($statusCode == FAILED) {
 		checkSoftimageJobFailure($jobid, $msg);
 	}
-	queueCmd((nullCB(), "JOBSTATUS", $jobid, 
+	queueCmd((nullCB(), "JOBSTATUS", $jobid,
 			encodeInt($statusCode), encodeInt($errorCode), $msg, NULL_TIMESTAMP, $out, $err));
 }
 
 sub dieNicely {
 	my ($msg) = @_;
-	
+
 	wlog ERROR, "$msg\n";
 	wlog DEBUG, "dieNicely called\n";
 	cleanSoftImage();
@@ -1236,10 +1236,10 @@ sub shutdownwHandler {
 		push(@PROFILE_EVENTS, "STOP", "N/A", time());
 	}
 	writeprofile();
-	
+
 	select(undef, undef, undef, 0.2);
 	wlog INFO, "Exiting\n";
-	
+
 	exit 0;
 }
 
@@ -1285,7 +1285,7 @@ sub workershellcmdHandler {
 
 sub stageinHandler {
 	my ($tag, $timeout, $msgs) = @_;
-	
+
 	my $descref = $$msgs[0];
 	my $desc = $$descref;
 	my @lines = split(/\n/, $desc);
@@ -1299,10 +1299,10 @@ sub stageinHandler {
 		push @STAGEIN, $pp[0];
 		push @STAGEIND, $pp[1];
 	}
-	
+
 	my $JOBID = "internal-$INTERNAL_ID_COUNTER";
-	$INTERNAL_ID_COUNTER++; 
-	
+	$INTERNAL_ID_COUNTER++;
+
 	$JOBDATA{$JOBID} = {
 		stagein => \@STAGEIN,
 		stageind => \@STAGEIND,
@@ -1310,7 +1310,7 @@ sub stageinHandler {
 		type => "stagein",
 		requestTag => $tag
 	};
-	
+
 	stagein($JOBID);
 }
 
@@ -1333,8 +1333,8 @@ sub stageoutHandler {
 	}
 
 	my $JOBID = "internal-$INTERNAL_ID_COUNTER";
-	$INTERNAL_ID_COUNTER++; 
-	
+	$INTERNAL_ID_COUNTER++;
+
 	$JOBDATA{$JOBID} = {
 		stageout => \@STAGEOUT,
 		stageoutd => \@STAGEOUTD,
@@ -1344,7 +1344,7 @@ sub stageoutHandler {
 		stageoutStatusSent => 1,
 		requestTag => $tag
 	};
-	
+
 	stageout($JOBID);
 }
 
@@ -1362,15 +1362,15 @@ sub cleanupHandler {
 	}
 
 	my $JOBID = "internal-$INTERNAL_ID_COUNTER";
-	$INTERNAL_ID_COUNTER++; 
-	
+	$INTERNAL_ID_COUNTER++;
+
 	$JOBDATA{$JOBID} = {
 		cleanup => \@CLEANUP,
 		type => "cleanup",
 		requestTag => $tag,
 		exitcode => 0
 	};
-	
+
 	cleanup($JOBID);
 }
 
@@ -1436,6 +1436,14 @@ sub getFileCB {
 			};
 		}
 	}
+  else if ($protocol eq "http") {
+    wlog DEBUG, "Getting file with wget...\n";
+    mkfdir($jobdir, $dst);
+    system("wget $src");
+    my $handle;
+		if (!open($handle, ">", "$dst")) {
+			dieNicely("Failed to open $dst: $!");
+  }
 	else {
 		return {
 			"jobid" => $jobid,
@@ -1454,7 +1462,7 @@ sub getFileCBDataInIndirect {
 		if (processCBError($state, $replyref, $flags)) {
 			my $msg = getErrorMessage($state);
 			wlog DEBUG, "$jobid getFileCBDataInIndirect error: $msg\n";
-			stageinFailed($jobid, ERROR_STAGEIN_RECEIVE, "Error staging in file: $msg", getErrorDetail($state));	
+			stageinFailed($jobid, ERROR_STAGEIN_RECEIVE, "Error staging in file: $msg", getErrorDetail($state));
 		}
 		return;
 	}
@@ -1552,7 +1560,7 @@ sub getFileCBDataIn {
 
 sub processCBError {
 	my ($state, $dataref, $flags) = @_;
-	
+
 	if (!defined $$state{"error"}) {
 		my @array;
 		$$state{"error"} = \@array;
@@ -1560,25 +1568,25 @@ sub processCBError {
 	my $dataArray = $$state{"error"};
 	push(@$dataArray, $$dataref);
 	my $len = scalar $dataArray;
-	
+
 	return ($flags & FINAL_FLAG);
 }
 
 sub getErrorMessage {
 	my ($state) = @_;
-	
+
 	my $dataArray = $$state{"error"};
 	my $len = scalar $dataArray;
-	
+
 	return $$dataArray[0];
 }
 
 sub getErrorDetail {
 	my ($state) = @_;
-	
+
 	my $dataArray = $$state{"error"};
 	my $len = scalar $dataArray;
-	
+
 	if ($len > 1) {
 		return $$dataArray[1];
 	}
@@ -1612,7 +1620,7 @@ sub completePinnedFile {
 
 sub stagein {
 	my ($jobid) = @_;
-	
+
 	wlog TRACE, "stagein(): $jobid\n";
 
 	my $STAGE = $JOBDATA{$jobid}{"stagein"};
@@ -1669,22 +1677,22 @@ sub stagein {
 
 sub stageinComplete {
 	my ($jobid) = @_;
-	
+
 	my $jobType = $JOBDATA{$jobid}{"type"};
-	
-	if ($jobType eq "full") { 
+
+	if ($jobType eq "full") {
 		queueJobStatusCmd($jobid, ACTIVE, 0, "workerid=$BLOCKID:$ID");
 		forkjob($jobid);
 	}
 	else {
 		queueReply($JOBDATA{$jobid}{"requestTag"}, ("OK"));
-		delete($JOBDATA{$jobid}); 
+		delete($JOBDATA{$jobid});
 	}
 }
 
 sub stageinFailed {
 	my ($jobid, $code, $msg, $detail) = @_;
-	
+
 	my $jobType = $JOBDATA{$jobid}{"type"};
 	if ($jobType eq "full") {
 		queueJobStatusCmd($jobid, FAILED, $code, $msg, $detail);
@@ -1788,14 +1796,14 @@ sub waitForPinnedFile {
 
 sub abortStageouts {
 	my ($jobid) = @_;
-	
+
 	# something larger than the number of actual stageouts
 	$JOBDATA{$jobid}{"stageindex"} = 1000000;
 }
 
 sub stageoutStarted {
 	my ($jobid) = @_;
-	
+
 	if (!defined $JOBDATA{$jobid}{"stageoutCount"}) {
 		$JOBDATA{$jobid}{"stageoutCount"} = 0;
 	}
@@ -1811,7 +1819,7 @@ sub stageoutFailed {
 
 sub stageoutEnded {
 	my ($jobid) = @_;
-	
+
 	wlog DEBUG, "$jobid Stageout done; stagecount is $JOBDATA{$jobid}{stageoutCount}\n";
 	$JOBDATA{$jobid}{"stageoutCount"} -= 1;
 	if ($JOBDATA{$jobid}{"stageoutCount"} == 0) {
@@ -1821,9 +1829,9 @@ sub stageoutEnded {
 
 sub stageoutsComplete {
 	my ($jobid) = @_;
-	
+
 	wlog DEBUG, "$jobid All stageouts acknowledged. Sending notification\n";
-	
+
 	if ($JOBDATA{$jobid}{"type"} eq "full") {
 		cleanup($jobid);
 		sendStatus($jobid);
@@ -1836,7 +1844,7 @@ sub stageoutsComplete {
 
 sub activeStageoutCount {
 	my ($jobid) = @_;
-	
+
 	return $JOBDATA{$jobid}{"stageoutCount"};
 }
 
@@ -1890,7 +1898,7 @@ sub stageout {
 		$JOBDATA{$jobid}{"stageindex"} = $STAGEINDEX + 1;
 		wlog INFO, "$jobid Staging out $lfile->$rfile (mode = $mode).\n";
 		my ($protocol, $host, $path) = urisplit($rfile);
-		
+
 		if ($skip) {
 			# notify client that file will not be staged out
 			# this is needed to allow the client to delete
@@ -1903,9 +1911,9 @@ sub stageout {
 			}
 			elsif ($skip == 3) {
 				wlog INFO, "$jobid Empty stageout of file ($lfile) (ON_SUCCESS mode and job failed)\n";
-			}	
+			}
 		}
-		
+
 		if ($protocol eq "file" || $protocol eq "proxy") {
 			# make sure we keep track of the total number of actual stageouts
 			stageoutStarted($jobid);
@@ -1969,34 +1977,34 @@ sub stageout {
 
 sub pathExpandStageouts {
 	my ($jobid) = @_;
-	
+
 	wlog DEBUG, "$jobid: Processing glob stageouts\n";
-	
+
 	my $STAGE = $JOBDATA{$jobid}{"stageout"};
 	my $STAGED = $JOBDATA{$jobid}{"stageoutd"};
 	my $STAGEM = $JOBDATA{$jobid}{"stageoutm"};
-	
+
 	my $i = 0;
 	while ($i < scalar @$STAGE) {
 		my $lfile = $$STAGE[$i];
 		wlog DEBUG, "$jobid: $i - lfile = $lfile\n";
-		my ($name, $dir, $suffix) = fileparse($lfile); 
-		
+		my ($name, $dir, $suffix) = fileparse($lfile);
+
 		if ($name =~ /\?/ || $name =~ /\*/) {
 			my $dest = $$STAGED[$i];
 			my $mode = $$STAGEM[$i];
-			
+
 			my $resrc = toRegexp($name);
 			my @lst = list($dir, $resrc);
-			
+
 			my $redst = toSubstg($dest);
-			
+
 			wlog DEBUG, "$jobid: resrc: $resrc, redst: $redst\n";
 			splice(@$STAGE, $i, 1);
 			splice(@$STAGED, $i, 1);
 			splice(@$STAGEM, $i, 1);
 			$i--;
-			
+
 			for my $f (@lst) {
 				push @$STAGE, "$dir$f";
 				$f =~ m/$resrc/;
@@ -2007,24 +2015,24 @@ sub pathExpandStageouts {
 				push @$STAGEM, $mode;
 			}
 		}
-		
+
 		$i++;
 	}
 }
 
 sub list {
 	my ($dir, $re) = @_;
-	
+
 	my @lst;
 	my $dirh;
 	opendir($dirh, $dir);
-	
+
 	while (my $f = readdir($dirh)) {
 		if ($f =~ /$re/) {
 			push @lst, $f;
 		}
 	}
-	
+
 	return @lst;
 }
 
@@ -2032,7 +2040,7 @@ sub list {
 sub toRegexp {
 	my ($s) = @_;
 	my $r = "";
-	
+
 	my $lastWasWildcard = 0;
 	for my $c (split(//, $s)) {
 		if ($c =~ /[\.\\\[\]\(\)\^\$|\+\{\}\/]/) {
@@ -2073,9 +2081,9 @@ sub toRegexp {
 sub toSubstg {
 	my ($s) = @_;
 	my $r = "";
-	
+
 	my $ix = 1;
-	
+
 	my $lastWasWildcard = 0;
 	for my $c (split(//, $s)) {
 		if ($c =~ /[\\\{\}\/]/) {
@@ -2105,14 +2113,14 @@ sub toSubstg {
 
 sub readFile {
 	my ($jobid, $fname) = @_;
-	
+
 	wlog DEBUG, "$jobid Reading $fname\n";
 	if (-e $fname) {
 		my $fd;
 		my $content;
-		
+
 		$content = "";
-		
+
 		open($fd, "<", $fname) or return "Error: could not open $fname";
 		while (<$fd>) {
 			$content = $content . $_;
@@ -2134,28 +2142,28 @@ sub readFile {
 
 sub readFiles {
 	my ($jobid) = @_;
-	
+
 	my $pid = $JOBDATA{$jobid}{"pid"};
-	
+
 	return (readFile($jobid, tmpSFile($pid, "out")), readFile($jobid, tmpSFile($pid, "err")));
 }
 
 sub sendStatus {
-	my ($jobid) = @_;	
+	my ($jobid) = @_;
 
 	my $ec = $JOBDATA{$jobid}{"exitcode"};
-	
+
 	if ($JOBDATA{$jobid}{"perftrace"}) {
 		$LOGLEVEL = WARN;
 	}
 
-	
+
 	my $stdoutRedir;
 	my $stderrRedir;
 	my $redirect;
-	
+
 	$redirect = 0;
-	
+
 	if (defined $JOBDATA{$jobid}{"job"}{"redirect"}) {
 		wlog DEBUG, "$jobid Output is redirected\n";
 		($stdoutRedir, $stderrRedir) = readFiles($jobid);
@@ -2166,7 +2174,7 @@ sub sendStatus {
 		$stdoutRedir = "";
 		$stderrRedir = "";
 	}
-	
+
 	if ($ec == 0) {
 		if ($redirect) {
 			queueJobStatusCmdExt($jobid, COMPLETED, 0, "", $stdoutRedir, $stderrRedir);
@@ -2187,7 +2195,7 @@ sub sendStatus {
 
 sub cleanup {
 	my ($jobid) = @_;
-	
+
 	my $type = $JOBDATA{$jobid}{"type"};
 
 	my $ec = $JOBDATA{$jobid}{"exitcode"};
@@ -2241,7 +2249,7 @@ sub cleanup {
 
 sub getExitMessage {
 	my ($jobid, $ec) = @_;
-	
+
 	if (defined $JOBDATA{$jobid}{"exitmessage"}) {
 		return $JOBDATA{$jobid}{"exitmessage"};
 	}
@@ -2324,11 +2332,11 @@ sub unpackSoftImage {
 
 	wlog DEBUG, "Running tar -xzf $src -C $SOFT_IMAGE_DIR\n";
 	my $out;
-	$out = qx/tar -xzf $src -C $SOFT_IMAGE_DIR 2>&1/; 
+	$out = qx/tar -xzf $src -C $SOFT_IMAGE_DIR 2>&1/;
 	if ($? != 0) {
 		die "Cannot create soft image: $!\n$out";
 	}
-	
+
 	if (-x "$SOFT_IMAGE_DIR/start") {
 		wlog DEBUG, "Running $SOFT_IMAGE_DIR/start\n";
 		$out = qx/$SOFT_IMAGE_DIR\/start 2>&1/;
@@ -2342,7 +2350,7 @@ sub unpackSoftImage {
 		else {
 			wlog DEBUG, "Image was NOT staged in\n";
 		}
-	}		
+	}
 }
 
 sub acquireSoftImageLock {
@@ -2363,12 +2371,12 @@ sub acquireSoftImageLock {
 		$SOFT_IMAGE_CREATE_LOCK = writeLock("$SOFT_IMAGE_DIR/.create");
 		unlock($SOFT_IMAGE_USE_LOCK);
 		$SOFT_IMAGE_USE_LOCK = readLock("$SOFT_IMAGE_DIR/.use");
-		
+
 		# make sure no errors from previous runs are there
 		if (-f "$SOFT_IMAGE_DIR/.error") {
 			unlink("$SOFT_IMAGE_DIR/.error");
 		}
-		
+
 		return 1;
 	}
 	else {
@@ -2380,7 +2388,7 @@ sub acquireSoftImageLock {
 
 sub writeLock {
 	my ($file) = @_;
-	
+
 	wlog DEBUG, "writeLock($file)\n";
 	my $desc;
 	open($desc, "+>>$file");
@@ -2392,7 +2400,7 @@ sub writeLock {
 
 sub readLock {
 	my ($file) = @_;
-	
+
 	wlog DEBUG, "readLock($file)\n";
 	my $desc;
 	open($desc, "+>>$file");
@@ -2404,14 +2412,14 @@ sub readLock {
 
 sub unlock {
 	my ($desc) = @_;
-	
+
 	flock($desc, LOCK_UN);
 	close($desc);
 }
 
 sub tryWriteLock {
 	my ($file) = @_;
-	
+
 	wlog DEBUG, "writeLock($file)\n";
 	my $desc;
 	open($desc, "+>>$file");
@@ -2426,7 +2434,7 @@ sub tryWriteLock {
 
 sub checkSoftimageJobFailure {
 	my ($JOBID, $err) = @_;
-	
+
 	if ($JOBID eq $SOFT_IMAGE_JOB_ID) {
 		$SOFT_IMAGE_JOB_ID = -1;
 		open(my $ERRF, ">$SOFT_IMAGE_DIR/.error");
@@ -2443,26 +2451,26 @@ sub cleanSoftImage {
 	my $softImageDir = $SOFT_IMAGE_DIR;
 	# prevent recursive calls to this sub
 	$SOFT_IMAGE_DIR = undef;
-	
+
 	my $mainLock = writeLock("$softImageDir/.main");
-		
+
 		unlock($SOFT_IMAGE_USE_LOCK);
 		$SOFT_IMAGE_USE_LOCK = tryWriteLock("$softImageDir/.use");
 		if (defined $SOFT_IMAGE_USE_LOCK) {
 			wlog INFO, "Tail process. Removing image from $softImageDir\n";
-		
+
 			if (-x "$softImageDir/stop") {
 				my $out = qx/$softImageDir\/stop 2>&1/;
 				if ($? != 0) {
 					die "Error running soft image shutdown: $!\n$out";
 				}
 			}
-			
+
 			rmtree($softImageDir, 0, 0);
-			
+
 			unlock($SOFT_IMAGE_USE_LOCK);
 		}
-		
+
 	unlock($mainLock);
 }
 
@@ -2604,9 +2612,9 @@ sub submitjobHandler {
 
 sub checkJob {
 	my ($tag, $JOBID, $JOB) = @_;
-	
+
 	wlog INFO, "$JOBID Job info received (tag=$tag)\n";
-	
+
 	my $executable = $$JOB{"executable"};
 	if (!(defined $JOBID)) {
 		my $ds = hts($JOB);
@@ -2642,12 +2650,12 @@ sub checkJob {
 
 sub asyncRun {
 	my ($logid, $timeout, $proc, $onStart, $onComplete) = @_;
-	
+
 	my ($PARENT_R, $CHILD_W);
 	pipe($PARENT_R, $CHILD_W);
-	
+
 	my $pid = fork();
-	
+
 	if (defined($pid)) {
 		if ($pid == 0) {
 			close $PARENT_R;
@@ -2696,7 +2704,7 @@ sub forkjob {
 		wlog DEBUG, "Job $JOBID has undefined jobslot\n";
 	}
 	$JOBDATA{$JOBID}{"jobslot"} = $JOBSLOT;
-	
+
 	asyncRun($JOBID, $JOBDATA{$JOBID}{"maxwalltime"}, sub {
 			my ($ERR) = @_;
 			if ($JOBDATA{$JOBID}{"perftrace"} != 0) {
@@ -2719,10 +2727,10 @@ sub forkjob {
 		sub {
 			# onComplete($err, $msg)
 			my ($err, $msg) = @_;
-			
+
 			$JOBDATA{$JOBID}{"exitcode"} = $err;
 			$JOBDATA{$JOBID}{"exitmessage"} = $msg;
-			
+
 			if ($PROFILE) {
 				push(@PROFILE_EVENTS, "TERM", $pid, time());
 			}
@@ -2731,9 +2739,9 @@ sub forkjob {
 			if ( defined $JOBSLOT ) {
 				push @jobslots,$JOBSLOT;
 			}
-			
+
 			$JOBS_RUNNING--;
-			
+
 			$JOB_COUNT++;
 			stageout($JOBID);
 		}
@@ -2752,7 +2760,7 @@ $SIG{CHLD} = \&JOBDONE;
 
 sub checkSubprocesses {
 	my $now = time();
-	
+
 	if (!$SUBPROCESSES_DONE) {
 		if ($now - $LAST_SUBPROCESS_CHECK_TIME < SUBPROCESS_CHECK_INTERVAL) {
 			return;
@@ -2763,7 +2771,7 @@ sub checkSubprocesses {
 	}
 	$SUBPROCESSES_DONE = 0;
 	$LAST_SUBPROCESS_CHECK_TIME = $now;
-	
+
 	if (!%ASYNC_WAIT_DATA) {
 		return;
 	}
@@ -2792,7 +2800,7 @@ sub checkSubprocessStatus {
 	my $tid;
 	my $status;
 	my $msg;
-	
+
 	wlog DEBUG, "$logid Checking pid $pid\n";
 
 	$tid = waitpid($pid, &WNOHANG);
@@ -2800,7 +2808,7 @@ sub checkSubprocessStatus {
 		# not done
 		my $timeout = $ASYNC_WAIT_DATA{$pid}{"timeout"};
 		if (($timeout > 0) && ($now > $startTime + $timeout)) {
-			wlog DEBUG, "$logid subprocess timed-out (start: $startTime, now: $now, timeout: $timeout); killing\n"; 
+			wlog DEBUG, "$logid subprocess timed-out (start: $startTime, now: $now, timeout: $timeout); killing\n";
 			kill 9, $pid;
 			# only kill it once
 			$ASYNC_WAIT_DATA{$pid}{"startTime"} = -1;
@@ -2842,7 +2850,7 @@ sub checkSubprocessStatus {
 			$status = 1;
 		}
 	}
-	
+
 	my $onComplete = $ASYNC_WAIT_DATA{$pid}{"onComplete"};
 	$onComplete->($status, $msg);
 
@@ -2852,7 +2860,7 @@ sub checkSubprocessStatus {
 
 sub tmpSFile {
 	my ($pid, $suffix) = @_;
-	
+
 	return "/tmp/$pid.$suffix";
 }
 
@@ -2861,7 +2869,7 @@ sub runjob {
 	my $executable = $$JOB{"executable"};
 	my $sout = $$JOB{"stdout"};
 	my $serr = $$JOB{"stderr"};
-	
+
 	if ($SOFT_IMAGE_LEAD_PROCESS) {
 		my $SOFTIMAGE = $$JOBDATA{"softimage"};
 		if ($SOFTIMAGE ne "") {
@@ -2870,7 +2878,7 @@ sub runjob {
 			unlock($SOFT_IMAGE_CREATE_LOCK);
 		}
 	}
-	
+
 	if (defined $SOFT_IMAGE_DIR) {
 		# wait until the soft image is created
 		wlog DEBUG, "Waiting for soft image\n";
@@ -2886,12 +2894,12 @@ sub runjob {
 			}
 			dieNicely("Soft image deployment failed: $err");
 		}
-		
+
 		$ENV{SOFTIMAGE} = $SOFT_IMAGE_DIR;
 	}
-	
+
 	my $cwd = getcwd();
-	
+
 	my $ename;
 	foreach $ename (keys %$JOBENV) {
 		$ENV{$ename} = $$JOBENV{$ename};
@@ -2920,10 +2928,10 @@ sub runjob {
 		open STDERR, ">$serr" or dieNicely("Cannot redirect STDERR");
 	}
 	close STDIN;
-	
+
 	#wlog DEBUG, "CWD: $cwd\n";
 	#wlog DEBUG, "Running $executable\n";
-	
+
 	exec { $executable } @$JOBARGS or print $WR "Could not execute $executable: $!\n";
 	die "Could not execute $executable: $!";
 }
@@ -2940,18 +2948,18 @@ sub stracerunjob {
 	unshift @$JOBARGS, "-tt";
 	unshift @$JOBARGS, "-f";
 	unshift @$JOBARGS, "-T";
-	
+
 	runjob($WR, $JOB, $JOBARGS, $JOBENV, $JOBSLOT, $WORKERPID, $JOBDATA);
 }
 
 sub processProbes {
 	my ($in) = @_;
-	
+
 	my $current = 0;
 	my $time;
-	
+
 	wlog DEBUG, "Processing probe data\n";
-	
+
 	my @lines = split /\n/, $in;
 	foreach my $line (@lines) {
 		$line = trim($line);
@@ -2970,7 +2978,7 @@ sub processProbes {
 			}
 			elsif ($line =~ /^-DL/) {
 				$current = 3;
-			}			
+			}
 		}
 		elsif ($current == 1) {
 			calculateAndSendCPUStats($time, $line);
@@ -2988,10 +2996,10 @@ my $LAST_CPU_LINE;
 
 sub calculateAndSendCPUStats {
 	my ($time, $line) = @_;
-	
+
 	# cpu  6687663 4396 12825492 47536746 74378 10 2743 0 0 0
 	#      user    nice system   idle     ....
-	# the units are not important. Usage since last time is 
+	# the units are not important. Usage since last time is
 	# delta(user + nice + system) / delta(all)
 	if (defined $LAST_CPU_LINE) {
 		my @e1 = split(/\s+/, $LAST_CPU_LINE);
@@ -3001,7 +3009,7 @@ sub calculateAndSendCPUStats {
 		my $t2 = sum(1, -1, @e2);
 		my $a2 = sum(1, 3, @e2);
 		my $load = ($a2 - $a1) / ($t2 - $t1);
-		
+
 		queueCmd((nullCB(), "RLOG", "INFO", "PROBE type=CPU workerid=$BLOCKID:$ID time=$time load=$load"));
 	}
 	$LAST_CPU_LINE = $line;
@@ -3009,13 +3017,13 @@ sub calculateAndSendCPUStats {
 
 sub sum {
 	my ($start, $end, @a) = @_;
-	
+
 	if ($end == -1) {
 		$end = (scalar @a) - 1;
-		
+
 	}
 	my $s = 0;
-	
+
 	for (my $i = $start; $i <= $end; $i++) {
 		$s = $s + $a[$i];
 	}
@@ -3024,12 +3032,12 @@ sub sum {
 
 sub calculateAndSendDFStats {
 	my ($time, $line) = @_;
-	
+
 	if ($line =~ /^Filesystem/) {
 		# header
 		return;
 	}
-	
+
 	my @els = split(/\s+/, $line);
 	my $mount = $els[5];
 	if (($mount =~ /^\/sys/) || ($mount =~ /^\/dev/) || $mount =~ (/^\/run/)) {
@@ -3043,7 +3051,7 @@ my %LAST_DL_LINES = ();
 my %SECTOR_SIZES = ();
 sub calculateAndSendDLStats {
 	my ($time, $line) = @_;
-	
+
 	if (!exists $SECTOR_SIZES{"initialized"}) {
 		$SECTOR_SIZES{"initialized"} = 1;
 		readSectorSizes();
@@ -3057,14 +3065,14 @@ sub calculateAndSendDLStats {
 		# see https://www.kernel.org/doc/Documentation/iostats.txt
 		my @els1 = split(/\s+/, $LAST_DL_LINES{$els2[2]}[0]);
 		my $lastTime = $LAST_DL_LINES{$els2[2]}[1];
-		
+
 		my $ss = getSectorSize($els2[2]);
 		my $wms = ($els2[10] - $els1[10]);
 		my $rms = ($els2[6] - $els1[6]);
-		
+
 		my $rthroughput;
 		my $wthroughput;
-		
+
 		# throughput is (bytes read|written) / (time spent reading|writing)
 		if ($rms == 0) {
 			$rthroughput = 0;
@@ -3078,10 +3086,10 @@ sub calculateAndSendDLStats {
 		else {
 			$wthroughput = $ss * ($els2[9] - $els1[9]) * 1000 / $wms;
 		}
-		
+
 		# load is the time doing i/o out of the total time
 		my $load = ($els2[12] - $els1[12]) / ($time - $lastTime) / 1000;
-		
+
 		queueCmd((nullCB(), "RLOG", "INFO", "PROBE type=DL workerid=$BLOCKID:$ID time=$time dev=$els2[2] wtr=$wthroughput rtr=$rthroughput load=$load"));
 	}
 	$LAST_DL_LINES{$els2[2]} = [$line, $time];
@@ -3089,7 +3097,7 @@ sub calculateAndSendDLStats {
 
 sub getSectorSize {
 	my ($key) = @_;
-	
+
 	if (defined $SECTOR_SIZES{$key}) {
 		return $SECTOR_SIZES{$key};
 	}
@@ -3110,7 +3118,7 @@ sub readSectorSizes {
 
 sub checkStartProbes {
 	my $now = time();
-	
+
 	if ($now - $LAST_PROBE_TIME > $PROBE_INTERVAL) {
 		$LAST_PROBE_TIME = $now;
 		startProbes();
